@@ -38,8 +38,10 @@ import type {
   FetchExerciseHistoryParams,
   GetBodyMetricsParams,
   GetCalendarDataParams,
+  GetPreviousSessionParams,
   GetWorkoutLogsParams,
   HealthStatus,
+  PreviousSessionData,
   UserTarget,
   UserTargetInput,
   WeeklyStats,
@@ -1247,6 +1249,90 @@ export function useGetExerciseLogsByWorkout<TData = Awaited<ReturnType<typeof ge
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetExerciseLogsByWorkoutQueryOptions(workoutLogId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPreviousSessionUrl = (params: GetPreviousSessionParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exercise-logs/previous-session?${stringifiedParams}` : `/api/exercise-logs/previous-session`
+}
+
+/**
+ * @summary Get the most recent logged values per exercise for a given workout day number
+ */
+export const getPreviousSession = async (params: GetPreviousSessionParams, options?: RequestInit): Promise<PreviousSessionData> => {
+
+  return customFetch<PreviousSessionData>(getGetPreviousSessionUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPreviousSessionQueryKey = (params?: GetPreviousSessionParams,) => {
+    return [
+    `/api/exercise-logs/previous-session`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPreviousSessionQueryOptions = <TData = Awaited<ReturnType<typeof getPreviousSession>>, TError = ErrorType<unknown>>(params: GetPreviousSessionParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPreviousSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPreviousSessionQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPreviousSession>>> = ({ signal }) => getPreviousSession(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPreviousSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPreviousSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getPreviousSession>>>
+export type GetPreviousSessionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the most recent logged values per exercise for a given workout day number
+ */
+
+export function useGetPreviousSession<TData = Awaited<ReturnType<typeof getPreviousSession>>, TError = ErrorType<unknown>>(
+ params: GetPreviousSessionParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPreviousSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPreviousSessionQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

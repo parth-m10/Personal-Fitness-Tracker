@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { exerciseLogsTable, exercisesTable, workoutLogsTable } from "@workspace/db";
-import { eq, gte, desc } from "drizzle-orm";
+import { eq, gte, desc, sql } from "drizzle-orm";
 import { CreateExerciseLogBody, UpdateExerciseLogBody, FetchExerciseHistoryQueryParams } from "@workspace/api-zod";
 
 const router = Router();
@@ -49,6 +49,40 @@ router.get("/by-workout/:workoutLogId", async (req, res) => {
     .innerJoin(exercisesTable, eq(exerciseLogsTable.exerciseId, exercisesTable.id))
     .where(eq(exerciseLogsTable.workoutLogId, workoutLogId));
   res.json(logs.map((r) => ({ ...r.el, exercise: r.exercise })));
+});
+
+router.get("/previous-session", async (req, res) => {
+  const dayNumber = parseInt(req.query.dayNumber as string);
+  if (isNaN(dayNumber)) return res.status(400).json({ error: "dayNumber is required" });
+
+  // Find the most recent workout log for this day number
+  const lastLog = await db
+    .select()
+    .from(workoutLogsTable)
+    .where(eq(workoutLogsTable.workoutDayNumber, dayNumber))
+    .orderBy(desc(workoutLogsTable.date))
+    .limit(1);
+
+  if (!lastLog.length) {
+    return res.json({ date: null, entries: [] });
+  }
+
+  const exerciseLogs = await db
+    .select()
+    .from(exerciseLogsTable)
+    .where(eq(exerciseLogsTable.workoutLogId, lastLog[0].id));
+
+  res.json({
+    date: lastLog[0].date,
+    entries: exerciseLogs.map((el) => ({
+      exerciseId: el.exerciseId,
+      actualSets: el.actualSets,
+      actualReps: el.actualReps,
+      actualWeightKg: el.actualWeightKg,
+      actualDurationSeconds: el.actualDurationSeconds,
+      formQuality: el.formQuality,
+    })),
+  });
 });
 
 router.get("/progress", async (req, res) => {

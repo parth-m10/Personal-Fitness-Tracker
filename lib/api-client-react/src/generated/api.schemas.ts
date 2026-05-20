@@ -195,6 +195,26 @@ export interface ExerciseLogUpdate {
   notes?: string | null;
 }
 
+export interface PreviousSessionEntry {
+  exerciseId: number;
+  /** @nullable */
+  actualSets?: number | null;
+  /** @nullable */
+  actualReps?: number | null;
+  /** @nullable */
+  actualWeightKg?: number | null;
+  /** @nullable */
+  actualDurationSeconds?: number | null;
+  /** @nullable */
+  formQuality?: string | null;
+}
+
+export interface PreviousSessionData {
+  /** @nullable */
+  date?: string | null;
+  entries: PreviousSessionEntry[];
+}
+
 export interface ExerciseProgressEntry {
   date: string;
   /** @nullable */
@@ -388,6 +408,10 @@ limit?: number | null;
  * @nullable
  */
 offset?: number | null;
+};
+
+export type GetPreviousSessionParams = {
+dayNumber: number;
 };
 
 export type FetchExerciseHistoryParams = {

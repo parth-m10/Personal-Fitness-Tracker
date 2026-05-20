@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Activity, Calendar, LayoutDashboard, LineChart, List, Settings, History, Dumbbell } from "lucide-react";
+import { Activity, Calendar, LayoutDashboard, LineChart, List, Settings, History, Dumbbell, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/theme";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="w-64 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 flex-shrink-0 flex flex-col hidden md:flex">
@@ -41,7 +43,23 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-3">
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors text-sm"
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="w-4 h-4 text-muted-foreground" />
+              <span>Light mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-4 h-4 text-muted-foreground" />
+              <span>Dark mode</span>
+            </>
+          )}
+        </button>
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
             U

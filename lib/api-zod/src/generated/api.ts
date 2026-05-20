@@ -395,6 +395,26 @@ export const GetExerciseLogsByWorkoutResponse = zod.array(GetExerciseLogsByWorko
 
 
 /**
+ * @summary Get the most recent logged values per exercise for a given workout day number
+ */
+export const GetPreviousSessionQueryParams = zod.object({
+  "dayNumber": zod.coerce.number()
+})
+
+export const GetPreviousSessionResponse = zod.object({
+  "date": zod.string().nullish(),
+  "entries": zod.array(zod.object({
+  "exerciseId": zod.number(),
+  "actualSets": zod.number().nullish(),
+  "actualReps": zod.number().nullish(),
+  "actualWeightKg": zod.number().nullish(),
+  "actualDurationSeconds": zod.number().nullish(),
+  "formQuality": zod.string().nullish()
+}))
+})
+
+
+/**
  * @summary Get historical progress for an exercise
  */
 export const FetchExerciseHistoryQueryParams = zod.object({

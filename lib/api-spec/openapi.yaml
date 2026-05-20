@@ -328,6 +328,25 @@ paths:
                 items:
                   $ref: "#/components/schemas/ExerciseLog"
 
+  /exercise-logs/previous-session:
+    get:
+      operationId: getPreviousSession
+      tags: [exercise-logs]
+      summary: Get the most recent logged values per exercise for a given workout day number
+      parameters:
+        - name: dayNumber
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Previous session data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviousSessionData"
+
   /exercise-logs/progress:
     get:
       operationId: fetchExerciseHistory
@@ -818,6 +837,34 @@ components:
           type: ["boolean", "null"]
         notes:
           type: ["string", "null"]
+
+    PreviousSessionEntry:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        actualSets:
+          type: ["integer", "null"]
+        actualReps:
+          type: ["integer", "null"]
+        actualWeightKg:
+          type: ["number", "null"]
+        actualDurationSeconds:
+          type: ["integer", "null"]
+        formQuality:
+          type: ["string", "null"]
+      required: [exerciseId]
+
+    PreviousSessionData:
+      type: object
+      properties:
+        date:
+          type: ["string", "null"]
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreviousSessionEntry"
+      required: [entries]
 
     ExerciseProgressEntry:
       type: object
