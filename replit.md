@@ -1,10 +1,11 @@
-# [Project name]
+# FitCycle — Lifetime Fitness Tracker
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A full-stack fitness tracking web app built around a repeating 5-day workout cycle. Tracks workouts, exercise progress, body metrics, and streaks indefinitely — designed to be used for months and years.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/fitness-tracker run dev` — run the frontend (port 23863)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -14,6 +15,7 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React + Vite + Tailwind CSS + Framer Motion + Recharts + lucide-react
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -22,24 +24,36 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — API contract (source of truth)
+- `lib/db/src/schema/` — DB schema (exercises, workoutDays, workoutLogs, bodyMetrics, userTargets, appState)
+- `artifacts/api-server/src/routes/` — Express route handlers (appState, exercises, workoutDays, workoutLogs, exerciseLogs, bodyMetrics, userTargets, dashboard)
+- `artifacts/fitness-tracker/src/` — React frontend (pages, components, hooks)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The 5-day workout cycle repeats forever via `app_state.current_workout_day_number` (1–5). When day 5 is completed, it wraps back to day 1 and increments `current_cycle_number`.
+- Skipped workouts advance the pointer same as completed ones — no day is lost, the cycle continues.
+- Exercise logs are cascade-deleted with their workout log.
+- The `workout_day_exercises` table stores per-day exercise targets; `user_targets` stores user-overridden targets.
+- Dashboard summary is computed server-side on each request (no caching needed at low volume).
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **Today's Workout**: shows current pending day with all exercise cards, lets user log sets/reps/weight/duration/form quality, and submits with "Finish Workout"
+- **Dashboard**: KPI cards (streak, workouts, volume, cycling), weekly bar chart, completion pie chart, cycle comparison
+- **Calendar**: monthly color-coded heatmap (green=completed, yellow=partial, red=skipped)
+- **Weekly Plan**: all 5 workout day definitions
+- **Progress**: per-exercise weight/volume trend charts, personal bests, improvement %
+- **Body Metrics**: log weight/waist/chest/belly with time-series charts
+- **History**: filterable/deletable workout log list
+- **Settings**: exercise target overrides, cycle/day pointer correction
+
+## Gotchas
+
+- Always re-run codegen after changing `openapi.yaml`: `pnpm --filter @workspace/api-spec run codegen`
+- Operations with both path params AND query params cause a Params type collision in the Zod barrel — use query-only params for operations that also have query params.
+- The API server must be restarted after any route changes: the workflow does `build + start` on each run.
 
 ## User preferences
 
 _Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

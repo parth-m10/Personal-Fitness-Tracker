@@ -1,22 +1,37 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FitCycle Lifetime Fitness Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: app-state
+    description: App state and current workout pointer
+  - name: workout-days
+    description: Workout day definitions
+  - name: exercises
+    description: Exercise definitions
+  - name: workout-logs
+    description: Workout session logs
+  - name: exercise-logs
+    description: Per-exercise logs within a workout
+  - name: body-metrics
+    description: Body measurement tracking
+  - name: user-targets
+    description: Per-exercise user targets
+  - name: dashboard
+    description: Dashboard aggregates and summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +39,520 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /app-state:
+    get:
+      operationId: getAppState
+      tags: [app-state]
+      summary: Get current app state (cycle number, current day)
+      responses:
+        "200":
+          description: App state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppState"
+    patch:
+      operationId: updateAppState
+      tags: [app-state]
+      summary: Manually update app state (cycle/day pointer correction)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppStateUpdate"
+      responses:
+        "200":
+          description: Updated app state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppState"
+
+  /workout-days:
+    get:
+      operationId: getWorkoutDays
+      tags: [workout-days]
+      summary: Get all 5 workout day definitions with exercises
+      responses:
+        "200":
+          description: Workout days
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutDay"
+
+  /workout-days/{dayNumber}:
+    get:
+      operationId: getWorkoutDay
+      tags: [workout-days]
+      summary: Get a specific workout day definition
+      parameters:
+        - name: dayNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workout day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutDay"
+
+  /exercises:
+    get:
+      operationId: getExercises
+      tags: [exercises]
+      summary: Get all exercises
+      responses:
+        "200":
+          description: Exercises list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exercise"
+
+  /exercises/{id}:
+    get:
+      operationId: getExercise
+      tags: [exercises]
+      summary: Get a specific exercise
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exercise
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exercise"
+
+  /workout-logs:
+    get:
+      operationId: getWorkoutLogs
+      tags: [workout-logs]
+      summary: Get workout logs with optional filters
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: endDate
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: dayNumber
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: offset
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Workout logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutLog"
+    post:
+      operationId: createWorkoutLog
+      tags: [workout-logs]
+      summary: Create a new workout log (finish workout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutLogInput"
+      responses:
+        "201":
+          description: Created workout log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutLog"
+
+  /workout-logs/{id}:
+    get:
+      operationId: getWorkoutLog
+      tags: [workout-logs]
+      summary: Get a specific workout log with exercise logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workout log detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutLogDetail"
+    patch:
+      operationId: updateWorkoutLog
+      tags: [workout-logs]
+      summary: Update a workout log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutLogUpdate"
+      responses:
+        "200":
+          description: Updated workout log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutLog"
+    delete:
+      operationId: deleteWorkoutLog
+      tags: [workout-logs]
+      summary: Delete a workout log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /exercise-logs:
+    post:
+      operationId: createExerciseLog
+      tags: [exercise-logs]
+      summary: Create exercise log entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseLogInput"
+      responses:
+        "201":
+          description: Created exercise log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseLog"
+
+  /exercise-logs/{id}:
+    patch:
+      operationId: updateExerciseLog
+      tags: [exercise-logs]
+      summary: Update an exercise log entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseLogUpdate"
+      responses:
+        "200":
+          description: Updated exercise log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseLog"
+    delete:
+      operationId: deleteExerciseLog
+      tags: [exercise-logs]
+      summary: Delete an exercise log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /exercise-logs/by-workout/{workoutLogId}:
+    get:
+      operationId: getExerciseLogsByWorkout
+      tags: [exercise-logs]
+      summary: Get all exercise logs for a workout
+      parameters:
+        - name: workoutLogId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exercise logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExerciseLog"
+
+  /exercise-logs/progress:
+    get:
+      operationId: fetchExerciseHistory
+      tags: [exercise-logs]
+      summary: Get historical progress for an exercise
+      parameters:
+        - name: exerciseId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: days
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Exercise progress history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExerciseProgressSummary"
+
+  /body-metrics:
+    get:
+      operationId: getBodyMetrics
+      tags: [body-metrics]
+      summary: Get body metrics history
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Body metrics list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BodyMetric"
+    post:
+      operationId: createBodyMetric
+      tags: [body-metrics]
+      summary: Log body metrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BodyMetricInput"
+      responses:
+        "201":
+          description: Created body metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BodyMetric"
+
+  /body-metrics/{id}:
+    patch:
+      operationId: updateBodyMetric
+      tags: [body-metrics]
+      summary: Update a body metric entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BodyMetricUpdate"
+      responses:
+        "200":
+          description: Updated body metric
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BodyMetric"
+    delete:
+      operationId: deleteBodyMetric
+      tags: [body-metrics]
+      summary: Delete a body metric entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /user-targets:
+    get:
+      operationId: getUserTargets
+      tags: [user-targets]
+      summary: Get all user targets
+      responses:
+        "200":
+          description: User targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserTarget"
+    put:
+      operationId: upsertUserTarget
+      tags: [user-targets]
+      summary: Create or update a user target for an exercise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserTargetInput"
+      responses:
+        "200":
+          description: Upserted user target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTarget"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get comprehensive dashboard stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/weekly-stats:
+    get:
+      operationId: getWeeklyStats
+      tags: [dashboard]
+      summary: Get workout stats grouped by week (last 12 weeks)
+      responses:
+        "200":
+          description: Weekly stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeeklyStats"
+
+  /dashboard/cycle-comparison:
+    get:
+      operationId: getCycleComparison
+      tags: [dashboard]
+      summary: Compare performance across cycles
+      responses:
+        "200":
+          description: Cycle comparison data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CycleStats"
+
+  /dashboard/calendar:
+    get:
+      operationId: getCalendarData
+      tags: [dashboard]
+      summary: Get calendar heatmap data
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: month
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Calendar data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarDay"
+
+  /dashboard/volume-by-exercise:
+    get:
+      operationId: getVolumeByExercise
+      tags: [dashboard]
+      summary: Get total volume per strength exercise
+      responses:
+        "200":
+          description: Volume by exercise
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExerciseVolume"
+
+  /dashboard/completion-breakdown:
+    get:
+      operationId: getCompletionBreakdown
+      tags: [dashboard]
+      summary: Get pie chart data for completed/partial/skipped
+      responses:
+        "200":
+          description: Completion breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompletionBreakdown"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +560,517 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    AppState:
+      type: object
+      properties:
+        id:
+          type: integer
+        currentCycleNumber:
+          type: integer
+        currentWorkoutDayNumber:
+          type: integer
+        lastCompletedDate:
+          type: ["string", "null"]
+      required: [id, currentCycleNumber, currentWorkoutDayNumber]
+
+    AppStateUpdate:
+      type: object
+      properties:
+        currentCycleNumber:
+          type: integer
+        currentWorkoutDayNumber:
+          type: integer
+
+    Exercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+        trackingType:
+          type: string
+        defaultSets:
+          type: ["integer", "null"]
+        defaultReps:
+          type: ["integer", "null"]
+        defaultDurationSeconds:
+          type: ["integer", "null"]
+        defaultWeightKg:
+          type: ["number", "null"]
+        formTip:
+          type: ["string", "null"]
+      required: [id, name, category, trackingType]
+
+    WorkoutDayExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+        exerciseId:
+          type: integer
+        exerciseOrder:
+          type: integer
+        targetSets:
+          type: ["integer", "null"]
+        targetReps:
+          type: ["string", "null"]
+        targetDurationSeconds:
+          type: ["integer", "null"]
+        targetWeightKg:
+          type: ["number", "null"]
+        restBetweenSetsSec:
+          type: ["integer", "null"]
+        restBetweenExercisesSec:
+          type: ["integer", "null"]
+        exercise:
+          $ref: "#/components/schemas/Exercise"
+      required: [id, exerciseId, exerciseOrder, exercise]
+
+    WorkoutDay:
+      type: object
+      properties:
+        id:
+          type: integer
+        dayNumber:
+          type: integer
+        focus:
+          type: string
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutDayExercise"
+      required: [id, dayNumber, focus, exercises]
+
+    WorkoutLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        cycleNumber:
+          type: integer
+        workoutDayNumber:
+          type: integer
+        status:
+          type: string
+        totalCalories:
+          type: ["number", "null"]
+        totalCyclingMinutes:
+          type: ["number", "null"]
+        energyLevel:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, date, cycleNumber, workoutDayNumber, status, createdAt]
+
+    WorkoutLogDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        cycleNumber:
+          type: integer
+        workoutDayNumber:
+          type: integer
+        status:
+          type: string
+        totalCalories:
+          type: ["number", "null"]
+        totalCyclingMinutes:
+          type: ["number", "null"]
+        energyLevel:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        exerciseLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseLog"
+      required: [id, date, cycleNumber, workoutDayNumber, status, createdAt, exerciseLogs]
+
+    WorkoutLogInput:
+      type: object
+      properties:
+        date:
+          type: string
+        cycleNumber:
+          type: integer
+        workoutDayNumber:
+          type: integer
+        status:
+          type: string
+        totalCalories:
+          type: ["number", "null"]
+        totalCyclingMinutes:
+          type: ["number", "null"]
+        energyLevel:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        exerciseLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseLogInput"
+      required: [date, cycleNumber, workoutDayNumber, status]
+
+    WorkoutLogUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        totalCalories:
+          type: ["number", "null"]
+        totalCyclingMinutes:
+          type: ["number", "null"]
+        energyLevel:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ExerciseLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        workoutLogId:
+          type: integer
+        exerciseId:
+          type: integer
+        status:
+          type: string
+        actualSets:
+          type: ["integer", "null"]
+        actualReps:
+          type: ["integer", "null"]
+        actualWeightKg:
+          type: ["number", "null"]
+        actualDurationSeconds:
+          type: ["integer", "null"]
+        totalVolume:
+          type: ["number", "null"]
+        formQuality:
+          type: ["string", "null"]
+        painDiscomfort:
+          type: ["boolean", "null"]
+        notes:
+          type: ["string", "null"]
+        exercise:
+          $ref: "#/components/schemas/Exercise"
+      required: [id, workoutLogId, exerciseId, status, exercise]
+
+    ExerciseLogInput:
+      type: object
+      properties:
+        workoutLogId:
+          type: ["integer", "null"]
+        exerciseId:
+          type: integer
+        status:
+          type: string
+        actualSets:
+          type: ["integer", "null"]
+        actualReps:
+          type: ["integer", "null"]
+        actualWeightKg:
+          type: ["number", "null"]
+        actualDurationSeconds:
+          type: ["integer", "null"]
+        totalVolume:
+          type: ["number", "null"]
+        formQuality:
+          type: ["string", "null"]
+        painDiscomfort:
+          type: ["boolean", "null"]
+        notes:
+          type: ["string", "null"]
+      required: [exerciseId, status]
+
+    ExerciseLogUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        actualSets:
+          type: ["integer", "null"]
+        actualReps:
+          type: ["integer", "null"]
+        actualWeightKg:
+          type: ["number", "null"]
+        actualDurationSeconds:
+          type: ["integer", "null"]
+        totalVolume:
+          type: ["number", "null"]
+        formQuality:
+          type: ["string", "null"]
+        painDiscomfort:
+          type: ["boolean", "null"]
+        notes:
+          type: ["string", "null"]
+
+    ExerciseProgressEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        actualSets:
+          type: ["integer", "null"]
+        actualReps:
+          type: ["integer", "null"]
+        actualWeightKg:
+          type: ["number", "null"]
+        actualDurationSeconds:
+          type: ["integer", "null"]
+        totalVolume:
+          type: ["number", "null"]
+        formQuality:
+          type: ["string", "null"]
+        cycleNumber:
+          type: integer
+      required: [date, cycleNumber]
+
+    ExerciseProgressSummary:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExerciseProgressEntry"
+        personalBestWeight:
+          type: ["number", "null"]
+        personalBestReps:
+          type: ["integer", "null"]
+        personalBestVolume:
+          type: ["number", "null"]
+        lastPerformedDate:
+          type: ["string", "null"]
+        firstLoggedWeight:
+          type: ["number", "null"]
+        improvementPercent:
+          type: ["number", "null"]
+      required: [exerciseId, exerciseName, history]
+
+    BodyMetric:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        weightKg:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        chestCm:
+          type: ["number", "null"]
+        bellyCm:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+      required: [id, date]
+
+    BodyMetricInput:
+      type: object
+      properties:
+        date:
+          type: string
+        weightKg:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        chestCm:
+          type: ["number", "null"]
+        bellyCm:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+      required: [date]
+
+    BodyMetricUpdate:
+      type: object
+      properties:
+        weightKg:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        chestCm:
+          type: ["number", "null"]
+        bellyCm:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+
+    UserTarget:
+      type: object
+      properties:
+        id:
+          type: integer
+        exerciseId:
+          type: integer
+        targetSets:
+          type: ["integer", "null"]
+        targetReps:
+          type: ["integer", "null"]
+        targetWeightKg:
+          type: ["number", "null"]
+        targetDurationSeconds:
+          type: ["integer", "null"]
+        updatedAt:
+          type: string
+      required: [id, exerciseId, updatedAt]
+
+    UserTargetInput:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        targetSets:
+          type: ["integer", "null"]
+        targetReps:
+          type: ["integer", "null"]
+        targetWeightKg:
+          type: ["number", "null"]
+        targetDurationSeconds:
+          type: ["integer", "null"]
+      required: [exerciseId]
+
+    DashboardSummary:
+      type: object
+      properties:
+        currentCycleNumber:
+          type: integer
+        currentWorkoutDayNumber:
+          type: integer
+        currentWorkoutFocus:
+          type: string
+        latestWeightKg:
+          type: ["number", "null"]
+        totalWorkoutsCompleted:
+          type: integer
+        totalCyclesCompleted:
+          type: integer
+        weeklyCompletionPercent:
+          type: number
+        monthlyCompletionPercent:
+          type: number
+        totalCaloriesBurned:
+          type: number
+        totalCyclingMinutes:
+          type: number
+        totalStrengthVolume:
+          type: number
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        missedSkippedCount:
+          type: integer
+        bestExerciseImprovement:
+          type: ["string", "null"]
+        weeklyWorkoutTarget:
+          type: integer
+      required:
+        - currentCycleNumber
+        - currentWorkoutDayNumber
+        - currentWorkoutFocus
+        - totalWorkoutsCompleted
+        - totalCyclesCompleted
+        - weeklyCompletionPercent
+        - monthlyCompletionPercent
+        - totalCaloriesBurned
+        - totalCyclingMinutes
+        - totalStrengthVolume
+        - currentStreak
+        - longestStreak
+        - missedSkippedCount
+        - weeklyWorkoutTarget
+
+    WeeklyStats:
+      type: object
+      properties:
+        weekLabel:
+          type: string
+        completed:
+          type: integer
+        partial:
+          type: integer
+        skipped:
+          type: integer
+        totalCalories:
+          type: number
+        totalCyclingMinutes:
+          type: number
+      required: [weekLabel, completed, partial, skipped, totalCalories, totalCyclingMinutes]
+
+    CycleStats:
+      type: object
+      properties:
+        cycleNumber:
+          type: integer
+        completed:
+          type: integer
+        partial:
+          type: integer
+        skipped:
+          type: integer
+        totalVolume:
+          type: number
+        totalCalories:
+          type: number
+      required: [cycleNumber, completed, partial, skipped, totalVolume, totalCalories]
+
+    CalendarDay:
+      type: object
+      properties:
+        date:
+          type: string
+        status:
+          type: ["string", "null"]
+        workoutDayNumber:
+          type: ["integer", "null"]
+        cycleNumber:
+          type: ["integer", "null"]
+        focus:
+          type: ["string", "null"]
+      required: [date]
+
+    ExerciseVolume:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        totalVolume:
+          type: number
+        sessionCount:
+          type: integer
+      required: [exerciseId, exerciseName, totalVolume, sessionCount]
+
+    CompletionBreakdown:
+      type: object
+      properties:
+        completed:
+          type: integer
+        partial:
+          type: integer
+        skipped:
+          type: integer
+        total:
+          type: integer
+      required: [completed, partial, skipped, total]
