@@ -57,7 +57,7 @@ export default function Dashboard() {
           <CardContent className="h-80">
             {loadingWeekly ? <Skeleton className="h-full w-full" /> : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyStats}>
+                <BarChart data={weeklyStats || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="weekLabel" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
@@ -114,7 +114,7 @@ export default function Dashboard() {
           <CardContent className="h-80">
             {loadingCycle ? <Skeleton className="h-full w-full" /> : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cycleStats}>
+                <LineChart data={cycleStats || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="cycleNumber" stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `C${val}`} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
@@ -134,7 +134,7 @@ export default function Dashboard() {
           <CardContent className="h-80">
             {loadingVolume ? <Skeleton className="h-full w-full" /> : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={volume?.slice(0, 5)} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={volume?.slice(0, 5) || []} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
                   <XAxis type="number" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis dataKey="exerciseName" type="category" stroke="#888" fontSize={12} tickLine={false} axisLine={false} width={100} />
