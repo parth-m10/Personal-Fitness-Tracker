@@ -1,4 +1,4 @@
-import { useFetchExerciseHistory, useGetExercises } from "@workspace/api-client-react";
+import { useFetchExerciseHistory, useGetExercises, getFetchExerciseHistoryQueryKey } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
@@ -23,8 +23,8 @@ export default function Progress() {
   }, [exercises, selectedExId]);
 
   const { data: history, isLoading: loadingHistory } = useFetchExerciseHistory(
-    { exerciseId: selectedExId!, days }, 
-    { query: { enabled: !!selectedExId } }
+    { exerciseId: selectedExId!, days },
+    { query: { enabled: !!selectedExId, queryKey: getFetchExerciseHistoryQueryKey({ exerciseId: selectedExId!, days }) } }
   );
 
   const chartData = useMemo(() => {

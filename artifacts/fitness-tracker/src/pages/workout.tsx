@@ -1,12 +1,14 @@
-import { 
-  useGetAppState, 
-  useGetWorkoutDay, 
-  useCreateWorkoutLog, 
+import {
+  useGetAppState,
+  useGetWorkoutDay,
+  useCreateWorkoutLog,
   useGetPreviousSession,
-  getGetAppStateQueryKey, 
-  getGetDashboardSummaryQueryKey, 
-  getGetWorkoutLogsQueryKey, 
-  getGetCalendarDataQueryKey 
+  getGetAppStateQueryKey,
+  getGetDashboardSummaryQueryKey,
+  getGetWorkoutLogsQueryKey,
+  getGetCalendarDataQueryKey,
+  getGetWorkoutDayQueryKey,
+  getGetPreviousSessionQueryKey,
 } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,11 +43,11 @@ export default function Workout() {
   const { data: appState, isLoading: loadingState } = useGetAppState();
   const currentDayNum = appState?.currentWorkoutDayNumber || 1;
   const { data: workoutDay, isLoading: loadingDay } = useGetWorkoutDay(currentDayNum, {
-    query: { enabled: !!appState }
+    query: { enabled: !!appState, queryKey: getGetWorkoutDayQueryKey(currentDayNum) }
   });
   const { data: prevSession } = useGetPreviousSession(
     { dayNumber: currentDayNum },
-    { query: { enabled: !!appState } }
+    { query: { enabled: !!appState, queryKey: getGetPreviousSessionQueryKey({ dayNumber: currentDayNum }) } }
   );
 
   const createLog = useCreateWorkoutLog();
