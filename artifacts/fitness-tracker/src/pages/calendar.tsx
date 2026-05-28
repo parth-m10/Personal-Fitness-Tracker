@@ -13,7 +13,16 @@ import { cn } from "@/lib/utils";
 function statusIcon(s: string) {
   if (s === "completed") return <CheckCircle className="w-3 h-3" />;
   if (s === "partial") return <MinusCircle className="w-3 h-3" />;
+  if (s === "missed") return <XCircle className="w-3 h-3" />;
   return <XCircle className="w-3 h-3" />;
+}
+
+function tileBg(status: string | null | undefined) {
+  if (status === "completed") return "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/15";
+  if (status === "partial") return "bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/15";
+  if (status === "skipped") return "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/15";
+  if (status === "missed") return "bg-red-950/40 border-red-800/50 text-red-600 hover:bg-red-950/55";
+  return "bg-card hover:bg-card/80 border-card-border";
 }
 
 function exerciseStatusBadge(status: string) {
@@ -81,11 +90,7 @@ export default function CalendarPage() {
               const dayData = calendarData?.find((d) => d.date === dateStr);
               const isCurrentDay = isToday(date);
               const hasLog = !!dayData?.status;
-
-              let bgClass = "bg-card hover:bg-card/80 border-card-border";
-              if (dayData?.status === "completed") bgClass = "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/15";
-              else if (dayData?.status === "partial") bgClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/15";
-              else if (dayData?.status === "skipped") bgClass = "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/15";
+              const bgClass = tileBg(dayData?.status);
 
               return (
                 <div
@@ -129,6 +134,7 @@ export default function CalendarPage() {
           { color: "bg-green-500/50 border-green-500", label: "Completed" },
           { color: "bg-yellow-500/50 border-yellow-500", label: "Partial" },
           { color: "bg-red-500/50 border-red-500", label: "Skipped" },
+          { color: "bg-red-950/60 border-red-800", label: "Missed" },
           { color: "bg-card border-card-border", label: "Rest / Upcoming" },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-2">
@@ -154,7 +160,8 @@ export default function CalendarPage() {
                         "capitalize text-xs flex items-center gap-1",
                         selected.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20",
                         selected.status === "partial" && "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-                        selected.status === "skipped" && "bg-red-500/15 text-red-400 border-red-500/20"
+                        selected.status === "skipped" && "bg-red-500/15 text-red-400 border-red-500/20",
+                        selected.status === "missed" && "bg-red-950/60 text-red-500 border-red-800/50"
                       )}
                       variant="outline"
                     >
@@ -168,6 +175,9 @@ export default function CalendarPage() {
               <div className="space-y-4 mt-2">
                 {/* Cycle / Day / Focus */}
                 <div className="flex items-center gap-3 text-sm">
+                  {selected.status === "missed" && (
+                    <span className="text-red-500 font-medium">Expected:</span>
+                  )}
                   <span className="text-muted-foreground">Cycle {selected.cycleNumber}</span>
                   <span className="text-muted-foreground">·</span>
                   <span className="text-muted-foreground">Day {selected.workoutDayNumber}</span>
@@ -226,6 +236,13 @@ export default function CalendarPage() {
 
                 {selected.status === "skipped" && (!selected.exerciseSummary || selected.exerciseSummary.length === 0) && (
                   <p className="text-sm text-muted-foreground italic">Day skipped — no exercises logged.</p>
+                )}
+
+                {selected.status === "missed" && (
+                  <div className="flex items-start gap-2 text-sm text-red-500/80 bg-red-950/30 rounded-lg p-3 border border-red-900/40">
+                    <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p>Workout was expected but no log was recorded.</p>
+                  </div>
                 )}
               </div>
             </>
