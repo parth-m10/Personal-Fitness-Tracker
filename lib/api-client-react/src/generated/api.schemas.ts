@@ -357,6 +357,12 @@ export interface CycleStats {
   totalCalories: number;
 }
 
+export interface CalendarExerciseSummary {
+  exerciseId: number;
+  exerciseName: string;
+  status: string;
+}
+
 export interface CalendarDay {
   date: string;
   /** @nullable */
@@ -367,6 +373,16 @@ export interface CalendarDay {
   cycleNumber?: number | null;
   /** @nullable */
   focus?: string | null;
+  /** @nullable */
+  workoutLogId?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  totalCalories?: number | null;
+  /** @nullable */
+  totalCyclingMinutes?: number | null;
+  /** @nullable */
+  exerciseSummary?: CalendarExerciseSummary[] | null;
 }
 
 export interface ExerciseVolume {

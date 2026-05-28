@@ -12,6 +12,7 @@ export * from './bodyMetric';
 export * from './bodyMetricInput';
 export * from './bodyMetricUpdate';
 export * from './calendarDay';
+export * from './calendarExerciseSummary';
 export * from './completionBreakdown';
 export * from './cycleStats';
 export * from './dashboardSummary';

@@ -1081,6 +1081,17 @@ components:
           type: number
       required: [cycleNumber, completed, partial, skipped, totalVolume, totalCalories]
 
+    CalendarExerciseSummary:
+      type: object
+      properties:
+        exerciseId:
+          type: integer
+        exerciseName:
+          type: string
+        status:
+          type: string
+      required: [exerciseId, exerciseName, status]
+
     CalendarDay:
       type: object
       properties:
@@ -1094,6 +1105,18 @@ components:
           type: ["integer", "null"]
         focus:
           type: ["string", "null"]
+        workoutLogId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        totalCalories:
+          type: ["number", "null"]
+        totalCyclingMinutes:
+          type: ["number", "null"]
+        exerciseSummary:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/CalendarExerciseSummary"
       required: [date]
 
     ExerciseVolume:

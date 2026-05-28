@@ -1,19 +1,39 @@
 import { useGetCalendarData, getGetCalendarDataQueryKey } from "@workspace/api-client-react";
+import type { CalendarDay } from "@workspace/api-client-react";
 import { useState } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO } from "date-fns";
+import { ChevronLeft, ChevronRight, Dumbbell, Flame, Bike, StickyNote, CheckCircle, XCircle, MinusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+function statusIcon(s: string) {
+  if (s === "completed") return <CheckCircle className="w-3 h-3" />;
+  if (s === "partial") return <MinusCircle className="w-3 h-3" />;
+  return <XCircle className="w-3 h-3" />;
+}
+
+function exerciseStatusBadge(status: string) {
+  if (status === "completed") return "bg-green-500/15 text-green-400 border-green-500/20";
+  if (status === "partial") return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
+  if (status === "skipped") return "bg-red-500/15 text-red-400 border-red-500/20";
+  return "bg-muted text-muted-foreground";
+}
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+  const [selected, setSelected] = useState<CalendarDay | null>(null);
+
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1; // 1-indexed for API
-  
-  const { data: calendarData, isLoading } = useGetCalendarData({ year, month });
+  const month = currentDate.getMonth() + 1;
+
+  const { data: calendarData, isLoading } = useGetCalendarData(
+    { year, month },
+    { query: { queryKey: getGetCalendarDataQueryKey({ year, month }) } }
+  );
 
   const nextMonth = () => setCurrentDate(new Date(year, month, 1));
   const prevMonth = () => setCurrentDate(new Date(year, month - 2, 1));
@@ -21,9 +41,7 @@ export default function CalendarPage() {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  
-  // Pad the beginning of the calendar grid
-  const startDayOfWeek = monthStart.getDay(); // 0 is Sunday
+  const startDayOfWeek = monthStart.getDay();
   const paddingDays = Array.from({ length: startDayOfWeek }).map((_, i) => i);
 
   return (
@@ -46,7 +64,7 @@ export default function CalendarPage() {
       <Card className="bg-card/50 backdrop-blur-sm">
         <CardContent className="p-6">
           <div className="grid grid-cols-7 gap-4 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div key={day} className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 {day}
               </div>
@@ -57,45 +75,44 @@ export default function CalendarPage() {
             {paddingDays.map((pad) => (
               <div key={`pad-${pad}`} className="h-24 rounded-xl border border-transparent opacity-20" />
             ))}
-            
+
             {daysInMonth.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
-              const dayData = calendarData?.find(d => d.date === dateStr);
-              
-              let bgClass = "bg-card hover:bg-card-hover border-card-border";
-              if (dayData?.status === "completed") bgClass = "bg-green-500/10 border-green-500/30 text-green-400";
-              else if (dayData?.status === "partial") bgClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
-              else if (dayData?.status === "skipped") bgClass = "bg-red-500/10 border-red-500/30 text-red-400";
-              
+              const dayData = calendarData?.find((d) => d.date === dateStr);
               const isCurrentDay = isToday(date);
-              
+              const hasLog = !!dayData?.status;
+
+              let bgClass = "bg-card hover:bg-card/80 border-card-border";
+              if (dayData?.status === "completed") bgClass = "bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/15";
+              else if (dayData?.status === "partial") bgClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/15";
+              else if (dayData?.status === "skipped") bgClass = "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/15";
+
               return (
-                <div 
-                  key={date.toISOString()} 
+                <div
+                  key={date.toISOString()}
+                  onClick={() => hasLog && dayData && setSelected(dayData)}
                   className={cn(
-                    "h-24 rounded-xl border p-2 flex flex-col transition-all cursor-pointer relative overflow-hidden group",
+                    "h-24 rounded-xl border p-2 flex flex-col transition-all relative overflow-hidden group",
                     bgClass,
+                    hasLog ? "cursor-pointer" : "cursor-default",
                     isCurrentDay && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                   )}
                 >
-                  <span className={cn(
-                    "text-sm font-semibold mb-1",
-                    isCurrentDay ? "text-primary" : "text-foreground"
-                  )}>
+                  <span className={cn("text-sm font-semibold mb-1", isCurrentDay ? "text-primary" : "text-foreground")}>
                     {format(date, "d")}
                   </span>
-                  
+
                   {isLoading ? (
                     <Skeleton className="w-full h-4 mt-auto opacity-50" />
                   ) : dayData?.focus ? (
                     <div className="mt-auto">
                       <div className="text-xs truncate font-medium opacity-90">{dayData.focus}</div>
-                      <div className="text-[10px] opacity-70">Cycle {dayData.cycleNumber} &bull; Day {dayData.workoutDayNumber}</div>
+                      <div className="text-[10px] opacity-70">C{dayData.cycleNumber} · D{dayData.workoutDayNumber}</div>
                     </div>
                   ) : null}
-                  
+
                   {dayData?.status && (
-                    <div className="absolute top-2 right-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-2 right-2 opacity-40 group-hover:opacity-90 transition-opacity">
                       <Dumbbell className="w-3 h-3" />
                     </div>
                   )}
@@ -105,25 +122,116 @@ export default function CalendarPage() {
           </div>
         </CardContent>
       </Card>
-      
+
+      {/* Legend */}
       <div className="flex gap-6 justify-center text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500/50 border border-green-500" />
-          <span className="text-muted-foreground">Completed</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-yellow-500/50 border border-yellow-500" />
-          <span className="text-muted-foreground">Partial</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500/50 border border-red-500" />
-          <span className="text-muted-foreground">Skipped</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-card border border-card-border" />
-          <span className="text-muted-foreground">Rest / Upcoming</span>
-        </div>
+        {[
+          { color: "bg-green-500/50 border-green-500", label: "Completed" },
+          { color: "bg-yellow-500/50 border-yellow-500", label: "Partial" },
+          { color: "bg-red-500/50 border-red-500", label: "Skipped" },
+          { color: "bg-card border-card-border", label: "Rest / Upcoming" },
+        ].map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-2">
+            <div className={cn("w-3 h-3 rounded-full border", color)} />
+            <span className="text-muted-foreground">{label}</span>
+          </div>
+        ))}
       </div>
+
+      {/* Day detail dialog */}
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="max-w-md bg-card border-card-border">
+          {selected && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <DialogTitle className="text-xl">
+                    {format(parseISO(selected.date), "EEEE, MMMM d yyyy")}
+                  </DialogTitle>
+                  {selected.status && (
+                    <Badge
+                      className={cn(
+                        "capitalize text-xs flex items-center gap-1",
+                        selected.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20",
+                        selected.status === "partial" && "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+                        selected.status === "skipped" && "bg-red-500/15 text-red-400 border-red-500/20"
+                      )}
+                      variant="outline"
+                    >
+                      {statusIcon(selected.status)}
+                      {selected.status}
+                    </Badge>
+                  )}
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                {/* Cycle / Day / Focus */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground">Cycle {selected.cycleNumber}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">Day {selected.workoutDayNumber}</span>
+                  {selected.focus && (
+                    <>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="font-medium text-foreground">{selected.focus}</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Stats row */}
+                {(selected.totalCalories || selected.totalCyclingMinutes) && (
+                  <div className="flex gap-4">
+                    {selected.totalCalories != null && (
+                      <div className="flex items-center gap-1.5 text-sm text-orange-400">
+                        <Flame className="w-4 h-4" />
+                        <span>{selected.totalCalories} kcal</span>
+                      </div>
+                    )}
+                    {selected.totalCyclingMinutes != null && (
+                      <div className="flex items-center gap-1.5 text-sm text-blue-400">
+                        <Bike className="w-4 h-4" />
+                        <span>{selected.totalCyclingMinutes} min cycling</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Notes */}
+                {selected.notes && (
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground bg-card/60 rounded-lg p-3 border border-card-border">
+                    <StickyNote className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p>{selected.notes}</p>
+                  </div>
+                )}
+
+                {/* Exercise list */}
+                {selected.exerciseSummary && selected.exerciseSummary.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Exercises ({selected.exerciseSummary.length})
+                    </p>
+                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                      {selected.exerciseSummary.map((ex) => (
+                        <div key={ex.exerciseId} className="flex items-center justify-between text-sm">
+                          <span className="text-foreground/80">{ex.exerciseName}</span>
+                          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", exerciseStatusBadge(ex.status))}>
+                            {ex.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selected.status === "skipped" && (!selected.exerciseSummary || selected.exerciseSummary.length === 0) && (
+                  <p className="text-sm text-muted-foreground italic">Day skipped — no exercises logged.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

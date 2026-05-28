@@ -8,7 +8,7 @@ import {
   appStateTable,
   workoutDaysTable,
 } from "@workspace/db";
-import { eq, and, gte, lte, desc, sql, sum, count } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, sum, count, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -168,6 +168,27 @@ router.get("/calendar", async (req, res) => {
   const workoutDays = await db.select().from(workoutDaysTable);
   const dayMap = Object.fromEntries(workoutDays.map((d) => [d.dayNumber, d.focus]));
 
+  // Fetch exercise summaries for all logs in this month in one query
+  const logIds = logs.map((l) => l.id);
+  const exerciseRows = logIds.length > 0
+    ? await db
+        .select({
+          workoutLogId: exerciseLogsTable.workoutLogId,
+          exerciseId: exerciseLogsTable.exerciseId,
+          exerciseName: exercisesTable.name,
+          status: exerciseLogsTable.status,
+        })
+        .from(exerciseLogsTable)
+        .innerJoin(exercisesTable, eq(exerciseLogsTable.exerciseId, exercisesTable.id))
+        .where(inArray(exerciseLogsTable.workoutLogId, logIds))
+    : [];
+
+  const exercisesByLog = new Map<number, typeof exerciseRows>();
+  for (const row of exerciseRows) {
+    if (!exercisesByLog.has(row.workoutLogId)) exercisesByLog.set(row.workoutLogId, []);
+    exercisesByLog.get(row.workoutLogId)!.push(row);
+  }
+
   const result = [];
   for (let d = 1; d <= daysInMonth; d++) {
     const date = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -178,6 +199,17 @@ router.get("/calendar", async (req, res) => {
       workoutDayNumber: log?.workoutDayNumber ?? null,
       cycleNumber: log?.cycleNumber ?? null,
       focus: log ? dayMap[log.workoutDayNumber] ?? null : null,
+      workoutLogId: log?.id ?? null,
+      notes: log?.notes ?? null,
+      totalCalories: log?.totalCalories ?? null,
+      totalCyclingMinutes: log?.totalCyclingMinutes ?? null,
+      exerciseSummary: log
+        ? (exercisesByLog.get(log.id) ?? []).map((r) => ({
+            exerciseId: r.exerciseId,
+            exerciseName: r.exerciseName,
+            status: r.status,
+          }))
+        : null,
     });
   }
 

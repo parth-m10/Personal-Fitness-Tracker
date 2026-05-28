@@ -5,6 +5,7 @@
  * FitCycle Lifetime Fitness Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { CalendarExerciseSummary } from './calendarExerciseSummary';
 
 export interface CalendarDay {
   date: string;
@@ -16,4 +17,14 @@ export interface CalendarDay {
   cycleNumber?: number | null;
   /** @nullable */
   focus?: string | null;
+  /** @nullable */
+  workoutLogId?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  totalCalories?: number | null;
+  /** @nullable */
+  totalCyclingMinutes?: number | null;
+  /** @nullable */
+  exerciseSummary?: CalendarExerciseSummary[] | null;
 }

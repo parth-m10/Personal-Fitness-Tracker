@@ -611,7 +611,16 @@ export const GetCalendarDataResponseItem = zod.object({
   "status": zod.string().nullish(),
   "workoutDayNumber": zod.number().nullish(),
   "cycleNumber": zod.number().nullish(),
-  "focus": zod.string().nullish()
+  "focus": zod.string().nullish(),
+  "workoutLogId": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "totalCalories": zod.number().nullish(),
+  "totalCyclingMinutes": zod.number().nullish(),
+  "exerciseSummary": zod.array(zod.object({
+  "exerciseId": zod.number(),
+  "exerciseName": zod.string(),
+  "status": zod.string()
+})).nullish()
 })
 export const GetCalendarDataResponse = zod.array(GetCalendarDataResponseItem)
 
